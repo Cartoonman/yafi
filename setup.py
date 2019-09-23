@@ -2,7 +2,7 @@
 
 from setuptools import setup, find_packages
 
-install_requires = ['defusedxml', 'xmltodict']
+install_requires = ["defusedxml", "xmltodict"]
 
 tests_require = ["pytest"]
 

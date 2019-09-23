@@ -15,7 +15,7 @@ class FIXContext(object):
         self.version = None
         self._protocol_tags = OrderedDict()  # name: {id, type} / id: {name, type}
         self._protocol_msgs = OrderedDict()  # admin: {}, app: {}
-                                  # name: {msgtype, tags_name: {name: req}, tags_id: {id: req}} / msgtype: {name, tags_name: {name: req}, tags_id: {id: req}}
+        # name: {msgtype, tags_name: {name: req}, tags_id: {id: req}} / msgtype: {name, tags_name: {name: req}, tags_id: {id: req}}
         self._protocol_header = OrderedDict()  # name: {name: req} / n_id: {id: req}
         self._protocol_trailer = OrderedDict()  # name: {name: req} / n_id: {id: req}
         self.initialized = False
@@ -62,18 +62,24 @@ class FIXContext(object):
                 protocol_msgs_admin_msgtype = {}
                 protocol_msgs_app_name = {}
                 protocol_msgs_app_msgtype = {}
-                self._protocol_msgs['admin'] = {}
-                self._protocol_msgs['app'] = {}
+                self._protocol_msgs["admin"] = {}
+                self._protocol_msgs["app"] = {}
                 for message in protocol_dict["messages"]["message"]:
                     tags_name = {}
                     tags_id = {}
                     if isinstance(message["field"], list):
                         for tag in message["field"]:
-                            tags_name[tag["@name"]] = {'required': tag["@required"]}
-                            tags_id[self._protocol_tags[tag["@name"]]['n_id']] = {'required': tag["@required"]}
+                            tags_name[tag["@name"]] = {"required": tag["@required"]}
+                            tags_id[self._protocol_tags[tag["@name"]]["n_id"]] = {
+                                "required": tag["@required"]
+                            }
                     else:
-                        tags_name[message["field"]["@name"]] = {'required': message["field"]["@required"]} 
-                        tags_id[self._protocol_tags[message["field"]["@name"]]['n_id']] = {'required': message["field"]["@required"]}
+                        tags_name[message["field"]["@name"]] = {
+                            "required": message["field"]["@required"]
+                        }
+                        tags_id[
+                            self._protocol_tags[message["field"]["@name"]]["n_id"]
+                        ] = {"required": message["field"]["@required"]}
 
                     try:
                         if isinstance(message["group"], list):
@@ -111,28 +117,35 @@ class FIXContext(object):
                             "tags_name": tags_name,
                             "tags_id": tags_id,
                         }
-                self._protocol_msgs['admin'].update(protocol_msgs_admin_msgtype)
-                self._protocol_msgs['admin'].update(protocol_msgs_admin_name)
-                self._protocol_msgs['app'].update(protocol_msgs_app_msgtype)
-                self._protocol_msgs['app'].update(protocol_msgs_app_name)
+                self._protocol_msgs["admin"].update(protocol_msgs_admin_msgtype)
+                self._protocol_msgs["admin"].update(protocol_msgs_admin_name)
+                self._protocol_msgs["app"].update(protocol_msgs_app_msgtype)
+                self._protocol_msgs["app"].update(protocol_msgs_app_name)
 
-                protocol_header_name = {'name': {}}
-                protocol_header_id = {'n_id': {}}
-                protocol_trailer_name = {'name': {}}
-                protocol_trailer_id = {'n_id': {}}
+                protocol_header_name = {"name": {}}
+                protocol_header_id = {"n_id": {}}
+                protocol_trailer_name = {"name": {}}
+                protocol_trailer_id = {"n_id": {}}
                 for field in protocol_dict["header"]["field"]:
-                    protocol_header_name['name'][field["@name"]] = {'required': field["@required"]}
-                    protocol_header_id['n_id'][self._protocol_tags[field["@name"]]['n_id']] = {'required': field["@required"]}
+                    protocol_header_name["name"][field["@name"]] = {
+                        "required": field["@required"]
+                    }
+                    protocol_header_id["n_id"][
+                        self._protocol_tags[field["@name"]]["n_id"]
+                    ] = {"required": field["@required"]}
 
                 for field in protocol_dict["trailer"]["field"]:
-                    protocol_trailer_name['name'][field["@name"]] = {'required': field["@required"]}
-                    protocol_trailer_id['n_id'][self._protocol_tags[field["@name"]]['n_id']] = {'required': field["@required"]}
+                    protocol_trailer_name["name"][field["@name"]] = {
+                        "required": field["@required"]
+                    }
+                    protocol_trailer_id["n_id"][
+                        self._protocol_tags[field["@name"]]["n_id"]
+                    ] = {"required": field["@required"]}
 
                 self._protocol_header.update(protocol_header_name)
                 self._protocol_header.update(protocol_header_id)
                 self._protocol_trailer.update(protocol_trailer_name)
                 self._protocol_trailer.update(protocol_trailer_id)
-                
 
         except FileNotFoundError:
             print(
@@ -144,9 +157,9 @@ class FIXContext(object):
     def _recurse_groups(self, group, use_id):
         group_dict = {}
         if use_id:
-            group_key = self._protocol_tags[group["@name"]]['n_id']
+            group_key = self._protocol_tags[group["@name"]]["n_id"]
         else:
-            group_key = group["@name"] 
+            group_key = group["@name"]
         group_dict[group_key] = {
             "required": group["@required"],
             "members": OrderedDict(),
@@ -154,14 +167,22 @@ class FIXContext(object):
         if isinstance(group["field"], list):
             for tag in group["field"]:
                 if use_id:
-                    group_dict[group_key]["members"][self._protocol_tags[tag["@name"]]['n_id']] = {'required': tag["@required"]}
+                    group_dict[group_key]["members"][
+                        self._protocol_tags[tag["@name"]]["n_id"]
+                    ] = {"required": tag["@required"]}
                 else:
-                    group_dict[group_key]["members"][tag["@name"]] = {'required': tag["@required"]}
+                    group_dict[group_key]["members"][tag["@name"]] = {
+                        "required": tag["@required"]
+                    }
         else:
             if use_id:
-                group_dict[group_key]["members"][self._protocol_tags[group["field"]["@name"]]['n_id']] = {'required': group["field"]["@required"]}
+                group_dict[group_key]["members"][
+                    self._protocol_tags[group["field"]["@name"]]["n_id"]
+                ] = {"required": group["field"]["@required"]}
             else:
-                group_dict[group_key]["members"][group["field"]["@name"]] = {'required': group["field"]["@required"]}                
+                group_dict[group_key]["members"][group["field"]["@name"]] = {
+                    "required": group["field"]["@required"]
+                }
         try:
             if isinstance(group["group"], list):
                 for subgroup in group["group"]:

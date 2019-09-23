@@ -4,14 +4,11 @@ import pytest
 from yafi import FIXContext, FIXInterface
 import json
 
-context = FIXContext('4.2')
+context = FIXContext("4.2")
 interface = FIXInterface(context)
 
 
-
-
-
-message = interface.generate_message('E')
+message = interface.generate_message("E")
 
 grp = message.get_group_template(73)
 grp[11] = 5000
@@ -25,5 +22,4 @@ grp.add_subgroup(subgrp)
 message.add_group(grp)
 
 
-#print(json.dumps(eval(str(message.data).replace("DefaultOrderedDict", "list")), indent=4))#
-
+# print(json.dumps(eval(str(message.data).replace("DefaultOrderedDict", "list")), indent=4))#

@@ -4,15 +4,8 @@ import time, datetime
 import copy
 
 
-
 class Tag(object):
-    def __init__(
-        self,
-        FIX_id=None,
-        FIX_name=None,
-        FIX_type=None,
-        FIX_data=None,
-    ):
+    def __init__(self, FIX_id=None, FIX_name=None, FIX_type=None, FIX_data=None):
         self.data = FIX_data
         self.id_ = FIX_id
         self.name = FIX_name
@@ -37,7 +30,7 @@ class Tag(object):
     def __repr__(self):
         return "Tag [{}({}): {}]".format(self.name, self.id_, self.data)
 
-    
+
 class Group(object):
     def __init__(self, id_, name, group_def, tag_context):
         self.data = DefaultOrderedDict(dict)
@@ -45,165 +38,128 @@ class Group(object):
         self.id_ = id_
         self.name = name
         for k, v in group_def.items():
-            self.data[k]['data'] = None
-            if 'members' in v:
-                self.data[k]['members'] = []
-                self.data[k]['template'] = Group(k, self.tag_dict[k]['name'], v['members'], tag_context)
-
+            self.data[k]["data"] = None
+            if "members" in v:
+                self.data[k]["members"] = []
+                self.data[k]["template"] = Group(
+                    k, self.tag_dict[k]["name"], v["members"], tag_context
+                )
 
     def add_subgroup(self, group):
-        self.data[group.id_]['members'].append(copy.deepcopy(group.data))
+        self.data[group.id_]["members"].append(copy.deepcopy(group.data))
 
     def get_subgroup_template(self, key):
         if isinstance(key, str):
             try:
                 key = int(key)
             except ValueError:
-                key = self.tag_dict[key]['n_id']
-        return copy.deepcopy(self.data[key]['template'])
-
+                key = self.tag_dict[key]["n_id"]
+        return copy.deepcopy(self.data[key]["template"])
 
     def __getitem__(self, key):
         if isinstance(key, str):
             try:
                 key = int(key)
             except ValueError:
-                key = self.tag_dict[key]['n_id']
+                key = self.tag_dict[key]["n_id"]
 
-        return data[key]['data']
-
+        return data[key]["data"]
 
     def __setitem__(self, key, value):
         if isinstance(key, str):
             try:
                 key = int(key)
             except ValueError:
-                key = self.tag_dict[key]['n_id'] 
+                key = self.tag_dict[key]["n_id"]
 
-        self.data[key]['data'] = value
+        self.data[key]["data"] = value
 
-    
     def __repr__(self):
         return self.data.__repr__()
-
-
-
-
-# msg = gen_message(fdsfds)
-# group = msg.get_group_template('NoOrders')
-# group.add_tag....
-# group.get_subgroups()
-
-# message.get_group_template()
-# # fill group 
-# group.member.set()
-# group.get_subgroup_template()
-# group.set_subgroup()
-# message.add_group(group)
-# message.add_group(group)
-# group{
-#     defmine members
-
-# }
-
-
-# tags :
-#     452: data: Tag()
-#     623: data: Tag() 
-#          member: [
-#         {
-#             5: Tag()
-#             645: Tag()
-#             78: Tag() [
-#                 {
-#                     85: Tag()
-#                     6456: Tag()
-#                 },
-#                 {
-#                     85: Tag()
-#                     6456: Tag()
-#                 },
-#             ]
-#         },
-#         {
-#             5: Tag()
-#             645: Tag()
-#             78: Tag() [
-#                 {
-#                     85: Tag()
-#                     6456: Tag()
-#                 },
-#                 {
-#                     85: Tag()
-#                     6456: Tag()
-#                 },
-#             ]
-#         },
-#     ]
-
 class Message(object):
-    def __init__(self, header, trailer, req_tags, opt_tags, groups, msg_cat, id_, name, tag_context):
+    def __init__(
+        self,
+        header,
+        trailer,
+        req_tags,
+        opt_tags,
+        groups,
+        msg_cat,
+        id_,
+        name,
+        tag_context,
+    ):
         self.id_ = id_
         self.name = name
-        self.data = {'header': DefaultOrderedDict(dict), 'tags': DefaultOrderedDict(dict), 'trailer': DefaultOrderedDict(dict)}
+        self.data = {
+            "header": DefaultOrderedDict(dict),
+            "tags": DefaultOrderedDict(dict),
+            "trailer": DefaultOrderedDict(dict),
+        }
         self.fix_msg_payload = None
         self.tag_dict = tag_context
 
-        for k, v in header['n_id'].items():
-            self.data['header'][k]['data'] = None
-        for k, v in trailer['n_id'].items():
-            self.data['trailer'][k]['data'] = None
-        for k, v in {**req_tags['tags_id'], **opt_tags['tags_id']}.items():
-            self.data['tags'][k]['data'] = None
-            if 'members' in v:
-                self.data['tags'][k]['members'] = []
-                self.data['tags'][k]['template'] = Group(k, tag_context[k]['name'], groups[k], tag_context)
-
+        for k, v in header["n_id"].items():
+            self.data["header"][k]["data"] = None
+        for k, v in trailer["n_id"].items():
+            self.data["trailer"][k]["data"] = None
+        for k, v in {**req_tags["tags_id"], **opt_tags["tags_id"]}.items():
+            self.data["tags"][k]["data"] = None
+            if "members" in v:
+                self.data["tags"][k]["members"] = []
+                self.data["tags"][k]["template"] = Group(
+                    k, tag_context[k]["name"], groups[k], tag_context
+                )
 
     def __getitem__(self, key):
         if isinstance(key, str):
             try:
                 key = int(key)
             except ValueError:
-                key = self.tag_dict[key]['n_id']
-        merged_data = {**self.data['header'], **self.data['tags'], **self.data['trailer']}
+                key = self.tag_dict[key]["n_id"]
+        merged_data = {
+            **self.data["header"],
+            **self.data["tags"],
+            **self.data["trailer"],
+        }
 
         if key in merged_data:
-            return merged_data[key]['data']
-
+            return merged_data[key]["data"]
 
     def __setitem__(self, key, value):
         if isinstance(key, str):
             try:
                 key = int(key)
             except ValueError:
-                key = self.tag_dict[key]['n_id']
+                key = self.tag_dict[key]["n_id"]
 
-        if key in self.data['header']:
-            self.data['header'][key]['data'] = value
-        elif key in self.data['trailer']:
-            self.data['trailer'][key]['data'] = value
-        elif key in self.data['tags']:
-            self.data['tags'][key]['data'] = value
-
+        if key in self.data["header"]:
+            self.data["header"][key]["data"] = value
+        elif key in self.data["trailer"]:
+            self.data["trailer"][key]["data"] = value
+        elif key in self.data["tags"]:
+            self.data["tags"][key]["data"] = value
 
     def add_group(self, group):
         group_data = copy.deepcopy(group.data)
-        if group.id_ in self.data['tags']:
-            self.data['tags'][group.id_]['members'].append(group_data)
-        elif group.id_ in self.data['header']:
-            self.data['header'][group.id_]['members'].append(group_data)
-        elif group.id_ in self.data['trailer']:
-            self.data['trailer'][group.id_]['members'].append(group_data)
-
+        if group.id_ in self.data["tags"]:
+            self.data["tags"][group.id_]["members"].append(group_data)
+        elif group.id_ in self.data["header"]:
+            self.data["header"][group.id_]["members"].append(group_data)
+        elif group.id_ in self.data["trailer"]:
+            self.data["trailer"][group.id_]["members"].append(group_data)
 
     def get_group_template(self, tag_id):
         if isinstance(tag_id, str):
             try:
                 tag_id = int(tag_id)
             except ValueError:
-                tag_id = self.tag_dict[tag_id]['n_id']
-        return copy.deepcopy({**self.data['header'], **self.data['tags'], **self.data['trailer']}[tag_id]['template'])
+                tag_id = self.tag_dict[tag_id]["n_id"]
+        return copy.deepcopy(
+            {**self.data["header"], **self.data["tags"], **self.data["trailer"]}[
+                tag_id
+            ]["template"]
+        )
 
     def ready_pkg(self):
         temp_set = self.required_tags
@@ -238,26 +194,26 @@ class Message(object):
         print_msg = f"Message [{self.name}({self.id_})]: \n[\n{tabs}"
         print_msg += f"HEADER: "
         tabs += "\t"
-        for k, v in self.data['header'].items():
+        for k, v in self.data["header"].items():
             print_msg += f"\n{tabs}"
             print_msg += f"{k}: {v['data']}"
         tabs = tabs[:-1]
         print_msg += f"\n{tabs}MSG: "
         tabs += "\t"
-        for k, v in self.data['tags'].items():
+        for k, v in self.data["tags"].items():
             print_msg += f"\n{tabs}"
             print_msg += f"{k}: {v['data']}"
-            if 'members' in v:
+            if "members" in v:
                 # recursion
                 print_msg = self._print_recurse(print_msg, v, tabs)
 
         tabs = tabs[:-1]
         print_msg += f"\n{tabs}TRAILER: "
         tabs += "\t"
-        for k, v in self.data['trailer'].items():
+        for k, v in self.data["trailer"].items():
             print_msg += f"\n{tabs}"
             print_msg += f"{k}: {v['data']}"
-            
+
         tabs = tabs[:-1]
         print_msg += "\n]\n"
 
@@ -266,13 +222,13 @@ class Message(object):
     def _print_recurse(self, print_msg, data, tabs):
         print_msg += f"\n{tabs}["
         tabs += "\t"
-        for grp in data['members']:
+        for grp in data["members"]:
             print_msg += f"\n{tabs}{{"
             tabs += "\t"
             for kx, vx in grp.items():
                 print_msg += f"\n{tabs}"
                 print_msg += f"{kx}: {vx['data']}"
-                if 'members' in vx:
+                if "members" in vx:
                     print_msg = self._print_recurse(print_msg, vx, tabs)
             tabs = tabs[:-1]
             print_msg += f"\n{tabs}}}"
@@ -280,27 +236,28 @@ class Message(object):
         print_msg += f"\n{tabs}]"
         return print_msg
 
+
 class FIXInterface(object):
     def __init__(self, context):
         self._context = context
 
     def generate_message(self, id_in):
         # Check if name is in context
-        if id_in in self._context._protocol_msgs['admin']:
-            msg_cat = 'admin'
-        elif id_in in self._context._protocol_msgs['app']:
-            msg_cat = 'app'
+        if id_in in self._context._protocol_msgs["admin"]:
+            msg_cat = "admin"
+        elif id_in in self._context._protocol_msgs["app"]:
+            msg_cat = "app"
         else:
             pass
             # throw exception message invalid
 
         # Check if we have name or ID
         msg_def = self._context._protocol_msgs[msg_cat][id_in]
-        if 'name' in msg_def:
+        if "name" in msg_def:
             msg_type = id_in
-            name = msg_def['name']
-        elif 'msgtype' in msg_def:
-            msg_type = msg_def['msgtype']
+            name = msg_def["name"]
+        elif "msgtype" in msg_def:
+            msg_type = msg_def["msgtype"]
             name = id_in
         else:
             raise KeyError(f"Unknown error related to {id_in}")
@@ -311,22 +268,62 @@ class FIXInterface(object):
         trailer = self._context._protocol_trailer
 
         # Set req and opt tags
-        req_tags = {'tags_name': {}, 'tags_id': {}}
-        opt_tags = {'tags_name': {}, 'tags_id': {}}
+        req_tags = {"tags_name": {}, "tags_id": {}}
+        opt_tags = {"tags_name": {}, "tags_id": {}}
 
-        req_tags['tags_name'].update(dict(filter(lambda x: x[1]['required'] == 'Y', self._context._protocol_msgs[msg_cat][msg_type]['tags_name'].items())))
-        req_tags['tags_id'].update(dict(filter(lambda x: x[1]['required'] == 'Y', self._context._protocol_msgs[msg_cat][msg_type]['tags_id'].items())))
-        opt_tags['tags_name'].update(dict(filter(lambda x: x[1]['required'] == 'N', self._context._protocol_msgs[msg_cat][msg_type]['tags_name'].items())))
-        opt_tags['tags_id'].update(dict(filter(lambda x: x[1]['required'] == 'N', self._context._protocol_msgs[msg_cat][msg_type]['tags_id'].items())))
+        req_tags["tags_name"].update(
+            dict(
+                filter(
+                    lambda x: x[1]["required"] == "Y",
+                    self._context._protocol_msgs[msg_cat][msg_type][
+                        "tags_name"
+                    ].items(),
+                )
+            )
+        )
+        req_tags["tags_id"].update(
+            dict(
+                filter(
+                    lambda x: x[1]["required"] == "Y",
+                    self._context._protocol_msgs[msg_cat][msg_type]["tags_id"].items(),
+                )
+            )
+        )
+        opt_tags["tags_name"].update(
+            dict(
+                filter(
+                    lambda x: x[1]["required"] == "N",
+                    self._context._protocol_msgs[msg_cat][msg_type][
+                        "tags_name"
+                    ].items(),
+                )
+            )
+        )
+        opt_tags["tags_id"].update(
+            dict(
+                filter(
+                    lambda x: x[1]["required"] == "N",
+                    self._context._protocol_msgs[msg_cat][msg_type]["tags_id"].items(),
+                )
+            )
+        )
 
-        merged_tags_id = {**req_tags['tags_id'], **opt_tags['tags_id']}
+        merged_tags_id = {**req_tags["tags_id"], **opt_tags["tags_id"]}
         groups = {}
         for k, v in merged_tags_id.items():
-            if 'members' in v:
-                groups[k] = v['members']
+            if "members" in v:
+                groups[k] = v["members"]
 
         return Message(
-            header=header, trailer=trailer, req_tags=req_tags, opt_tags=opt_tags, groups=groups, id_=msg_type, name=name, msg_cat=msg_cat, tag_context=self._context._protocol_tags
+            header=header,
+            trailer=trailer,
+            req_tags=req_tags,
+            opt_tags=opt_tags,
+            groups=groups,
+            id_=msg_type,
+            name=name,
+            msg_cat=msg_cat,
+            tag_context=self._context._protocol_tags,
         )
 
     def load_message(self, msg_array):
