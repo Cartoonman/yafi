@@ -1,4 +1,28 @@
 #!/usr/bin/env python
+
+# MIT License
+#
+# Copyright (c) 2019 Carl Colena
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+
 from pathlib import Path
 import xmltodict
 from collections import OrderedDict
@@ -69,17 +93,17 @@ class FIXContext(object):
                     tags_id = {}
                     if isinstance(message["field"], list):
                         for tag in message["field"]:
-                            tags_name[tag["@name"]] = {"required": tag["@required"]}
+                            tags_name[tag["@name"]] = {"required": self._boolean_convert(tag["@required"])}
                             tags_id[self._protocol_tags[tag["@name"]]["n_id"]] = {
-                                "required": tag["@required"]
+                                "required": self._boolean_convert(tag["@required"])
                             }
                     else:
                         tags_name[message["field"]["@name"]] = {
-                            "required": message["field"]["@required"]
+                            "required": self._boolean_convert(message["field"]["@required"])
                         }
                         tags_id[
                             self._protocol_tags[message["field"]["@name"]]["n_id"]
-                        ] = {"required": message["field"]["@required"]}
+                        ] = {"required": self._boolean_convert(message["field"]["@required"])}
 
                     try:
                         if isinstance(message["group"], list):
@@ -128,19 +152,19 @@ class FIXContext(object):
                 protocol_trailer_id = {"n_id": {}}
                 for field in protocol_dict["header"]["field"]:
                     protocol_header_name["name"][field["@name"]] = {
-                        "required": field["@required"]
+                        "required": self._boolean_convert(field["@required"])
                     }
                     protocol_header_id["n_id"][
                         self._protocol_tags[field["@name"]]["n_id"]
-                    ] = {"required": field["@required"]}
+                    ] = {"required": self._boolean_convert(field["@required"])}
 
                 for field in protocol_dict["trailer"]["field"]:
                     protocol_trailer_name["name"][field["@name"]] = {
-                        "required": field["@required"]
+                        "required": self._boolean_convert(field["@required"])
                     }
                     protocol_trailer_id["n_id"][
                         self._protocol_tags[field["@name"]]["n_id"]
-                    ] = {"required": field["@required"]}
+                    ] = {"required": self._boolean_convert(field["@required"])}
 
                 self._protocol_header.update(protocol_header_name)
                 self._protocol_header.update(protocol_header_id)
@@ -161,7 +185,7 @@ class FIXContext(object):
         else:
             group_key = group["@name"]
         group_dict[group_key] = {
-            "required": group["@required"],
+            "required": self._boolean_convert(group["@required"]),
             "members": OrderedDict(),
         }
         if isinstance(group["field"], list):
@@ -169,19 +193,19 @@ class FIXContext(object):
                 if use_id:
                     group_dict[group_key]["members"][
                         self._protocol_tags[tag["@name"]]["n_id"]
-                    ] = {"required": tag["@required"]}
+                    ] = {"required": self._boolean_convert(tag["@required"])}
                 else:
                     group_dict[group_key]["members"][tag["@name"]] = {
-                        "required": tag["@required"]
+                        "required": self._boolean_convert(tag["@required"])
                     }
         else:
             if use_id:
                 group_dict[group_key]["members"][
                     self._protocol_tags[group["field"]["@name"]]["n_id"]
-                ] = {"required": group["field"]["@required"]}
+                ] = {"required": self._boolean_convert(group["field"]["@required"])}
             else:
                 group_dict[group_key]["members"][group["field"]["@name"]] = {
-                    "required": group["field"]["@required"]
+                    "required": self._boolean_convert(group["field"]["@required"])
                 }
         try:
             if isinstance(group["group"], list):
@@ -196,6 +220,14 @@ class FIXContext(object):
         except KeyError:
             pass
         return group_dict
+
+    def _boolean_convert(self, var):
+        if var == "Y":
+            return True
+        elif var == "N":
+            return False
+        else:
+            raise Exception
 
 
 # message = interface.gen_message(type)

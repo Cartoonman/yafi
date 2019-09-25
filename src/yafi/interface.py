@@ -1,4 +1,27 @@
 #!/usr/bin/env python
+
+# MIT License
+#
+# Copyright (c) 2019 Carl Colena
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 from yafi.utils import DefaultOrderedDict
 import time, datetime
 import copy
@@ -48,6 +71,18 @@ class Group(object):
     def add_subgroup(self, group):
         self.data[group.id_]["members"].append(copy.deepcopy(group.data))
 
+    def get_subgroup(self, tag_id): # TODO encapsulate group members in Group obj before returning.
+        if isinstance(tag_id, str):
+            try:
+                tag_id = int(tag_id)
+            except ValueError:
+                tag_id = self.tag_dict[tag_id]["n_id"]
+        return copy.deepcopy(
+            {**self.data["header"], **self.data["tags"], **self.data["trailer"]}[
+                tag_id
+            ]["members"]
+        )
+
     def get_subgroup_template(self, key):
         if isinstance(key, str):
             try:
@@ -62,8 +97,10 @@ class Group(object):
                 key = int(key)
             except ValueError:
                 key = self.tag_dict[key]["n_id"]
-
-        return data[key]["data"]
+        if key in self.data:
+            return self.data[key]["data"]
+        else:
+            raise KeyError
 
     def __setitem__(self, key, value):
         if isinstance(key, str):
@@ -71,8 +108,10 @@ class Group(object):
                 key = int(key)
             except ValueError:
                 key = self.tag_dict[key]["n_id"]
-
-        self.data[key]["data"] = value
+        if key in self.data:
+            self.data[key]["data"] = value
+        else:
+            raise KeyError
 
     def __repr__(self):
         return self.data.__repr__()
@@ -125,6 +164,8 @@ class Message(object):
 
         if key in merged_data:
             return merged_data[key]["data"]
+        else:
+            raise KeyError
 
     def __setitem__(self, key, value):
         if isinstance(key, str):
@@ -139,6 +180,8 @@ class Message(object):
             self.data["trailer"][key]["data"] = value
         elif key in self.data["tags"]:
             self.data["tags"][key]["data"] = value
+        else:
+            raise KeyError
 
     def add_group(self, group):
         group_data = copy.deepcopy(group.data)
@@ -148,6 +191,18 @@ class Message(object):
             self.data["header"][group.id_]["members"].append(group_data)
         elif group.id_ in self.data["trailer"]:
             self.data["trailer"][group.id_]["members"].append(group_data)
+
+    def get_group(self, tag_id): # TODO encapsulate group members in Group obj before returning.
+        if isinstance(tag_id, str):
+            try:
+                tag_id = int(tag_id)
+            except ValueError:
+                tag_id = self.tag_dict[tag_id]["n_id"]
+        return copy.deepcopy(
+            {**self.data["header"], **self.data["tags"], **self.data["trailer"]}[
+                tag_id
+            ]["members"]
+        )
 
     def get_group_template(self, tag_id):
         if isinstance(tag_id, str):
@@ -248,8 +303,7 @@ class FIXInterface(object):
         elif id_in in self._context._protocol_msgs["app"]:
             msg_cat = "app"
         else:
-            pass
-            # throw exception message invalid
+            raise KeyError(f"Message {id_in} not valid")
 
         # Check if we have name or ID
         msg_def = self._context._protocol_msgs[msg_cat][id_in]
@@ -274,7 +328,7 @@ class FIXInterface(object):
         req_tags["tags_name"].update(
             dict(
                 filter(
-                    lambda x: x[1]["required"] == "Y",
+                    lambda x: x[1]["required"],
                     self._context._protocol_msgs[msg_cat][msg_type][
                         "tags_name"
                     ].items(),
@@ -284,7 +338,7 @@ class FIXInterface(object):
         req_tags["tags_id"].update(
             dict(
                 filter(
-                    lambda x: x[1]["required"] == "Y",
+                    lambda x: x[1]["required"],
                     self._context._protocol_msgs[msg_cat][msg_type]["tags_id"].items(),
                 )
             )
@@ -292,7 +346,7 @@ class FIXInterface(object):
         opt_tags["tags_name"].update(
             dict(
                 filter(
-                    lambda x: x[1]["required"] == "N",
+                    lambda x: not x[1]["required"],
                     self._context._protocol_msgs[msg_cat][msg_type][
                         "tags_name"
                     ].items(),
@@ -302,7 +356,7 @@ class FIXInterface(object):
         opt_tags["tags_id"].update(
             dict(
                 filter(
-                    lambda x: x[1]["required"] == "N",
+                    lambda x: not x[1]["required"],
                     self._context._protocol_msgs[msg_cat][msg_type]["tags_id"].items(),
                 )
             )
