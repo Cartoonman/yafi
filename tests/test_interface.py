@@ -107,7 +107,7 @@ def test_message_group(interface_42):
     assert group is not interface.generate_message("IOI")
 
     message.add_group(group)
-    assert message['NoIOIQualifiers'][0]
+
     
 
 
